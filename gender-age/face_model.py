@@ -65,7 +65,6 @@ class FaceModel:
       detector = MtcnnDetector(model_folder=mtcnn_path, ctx=ctx, num_worker=1, accurate_landmark = True, threshold=[0.0,0.0,0.2])
     self.detector = detector
 
-
   def get_input(self, face_img):
     ret = self.detector.detect_face(face_img, det_type = self.args.det)
     if ret is None:
@@ -84,16 +83,3 @@ class FaceModel:
     data = mx.nd.array(input_blob)
     db = mx.io.DataBatch(data=(data,))
     return db
-
-
-  def get_ga(self, data):
-    self.model.forward(data, is_train=False)
-    ret = self.model.get_outputs()[0].asnumpy()
-    g = ret[:,0:2].flatten()
-    gender = np.argmax(g)
-    a = ret[:,2:202].reshape( (100,2) )
-    a = np.argmax(a, axis=1)
-    age = int(sum(a))
-
-    return gender, age
-

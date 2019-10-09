@@ -74,14 +74,50 @@ class FaceModel:
     bbox, points = ret
     if bbox.shape[0]==0:
       return None
-    bbox = bbox[0,0:4]
-    points = points[0,:].reshape((2,5)).T
-    #print(bbox)
-    #print(points)
+    bbox = bbox[0, 0:4]
+    points = points[0, :].reshape((2,5)).T
+    # print(bbox)
+    # print(points)
     nimg = face_preprocess.preprocess(face_img, bbox, points, image_size='112,112')
     nimg = cv2.cvtColor(nimg, cv2.COLOR_BGR2RGB)
-    aligned = np.transpose(nimg, (2,0,1))
+    aligned = np.transpose(nimg, (2, 0, 1))
     return aligned
+
+  def get_input_multi(self, face_img):
+    ret = self.detector.detect_face(face_img, det_type = self.args.det)
+    if ret is None:
+      return None
+    bboxs, pointss = ret
+    if bboxs.shape[0]==0:
+      return None
+    else:
+      aligneds = []
+      for i in range(bboxs.shape[0]):
+        bbox = bboxs[i, 0:4]
+        # cv2.rectangle(face_img, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 255, 0), 2)
+        points = pointss[i, :].reshape((2, 5)).T
+        # print(points)
+        # print(type(points))
+        for j in range(points.shape[0]):
+          point = points[j]
+          point_x = point[0]
+          point_y = point[1]
+          # cv2.circle(face_img, (point_x, point_y), 3, (0, 0, 255), -1)
+          # cv2.imshow("point", face_img)
+          # cv2.waitKey(1)
+
+        # cut to 112x112
+        nimg = face_preprocess.preprocess(face_img, bbox, points, image_size='112,112')
+        # cv2.imshow("nimg", nimg)
+        nimg = cv2.cvtColor(nimg, cv2.COLOR_BGR2RGB)
+
+        # "nimg" transpose from (112, 112, 3) to (3, 112, 112)
+        aligned = np.transpose(nimg, (2, 0, 1))
+
+        aligneds.append(aligned)
+        # cv2.imshow("rect", face_img)
+        # cv2.waitKey(2000)
+    return bboxs, aligneds
 
   def get_feature(self, aligned):
     input_blob = np.expand_dims(aligned, axis=0)
